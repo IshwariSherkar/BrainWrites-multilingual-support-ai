@@ -1,4 +1,4 @@
-# BrainWrites — Backend
+# BrainWrites - Backend
 
 FastAPI + MongoDB + ML Models backend for the BrainWrites multilingual customer support platform.
 

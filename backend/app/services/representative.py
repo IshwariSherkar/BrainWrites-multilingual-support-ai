@@ -34,7 +34,7 @@ class RepresentativeService:
     async def register_representative(
         self, data: RepresentativeRegisterRequest
     ) -> RepresentativeProfileSchema:
-        # Step 1 — create auth credentials
+        # Step 1 - create auth credentials
         rep_auth_data = UserRegisterRequest(
             email=data.email,
             password=data.password,
@@ -42,7 +42,7 @@ class RepresentativeService:
         )
         user = await self.auth_service.register(rep_auth_data)
 
-        # Step 2 — create representative profile
+        # Step 2 - create representative profile
         representative = RepresentativeProfile(
             userId=user.userId,
             companyId=data.companyId,

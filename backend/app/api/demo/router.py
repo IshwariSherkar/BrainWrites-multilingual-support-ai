@@ -140,7 +140,7 @@ async def demo_chat(data: DemoChatRequest):
         "detail": f"{tone.capitalize()} tone applied"
     })
 
-    # ─── Step 4: Translation ──────────────────────────
+    # ─── Step 4: Translation ─────────────────────────
     pipeline_steps.append({
         "step": "Translation",
         "status": "processing",
@@ -148,23 +148,32 @@ async def demo_chat(data: DemoChatRequest):
     })
 
     try:
-        target_lang = LANGUAGE_MAP.get(language, "Hindi")
-        trans_prompt = f"translate English to {target_lang}: {tone_standardized.strip()}"
-        inputs = tokenizer(trans_prompt, return_tensors="pt", padding=True, truncation=True, max_length=512)
-        outputs = model.generate(input_ids=inputs["input_ids"], attention_mask=inputs["attention_mask"], max_length=200, num_beams=4, early_stopping=True)
-        final_response = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
-        if len(final_response) < 5:
+        if language == "english":
             final_response = tone_standardized
-        logger.info(f"T5 translation: '{tone_standardized[:50]}' → '{final_response[:50]}'")
+        else:
+            lang_instructions = {
+                "hindi": "Translate to casual conversational Hindi mixed with some English words (Hinglish). Like how Indians actually speak — not textbook Hindi. Example: 'Aapka order 24 hours mein deliver ho jayega, don't worry!' Return only the translated text.",
+                "marathi": "Translate to casual conversational Marathi mixed with some English words. Like how Pune/Mumbai people actually speak — not textbook Marathi. Return only the translated text.",
+                "gujarati": "Translate to casual conversational Gujarati mixed with some English words. Like how Gujaratis actually speak in daily life — not textbook Gujarati. Return only the translated text.",
+                "punjabi": "Translate to casual conversational Punjabi mixed with some English words. Like how Punjabis actually speak — not textbook Punjabi. Return only the translated text.",
+            }
+            instruction = lang_instructions.get(
+                language,
+                f"Translate to {LANGUAGE_MAP.get(language, language)}. Return only the translated text."
+            )
+            trans_response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": instruction},
+                    {"role": "user", "content": tone_standardized}
+                ]
+            )
+            final_response = trans_response.choices[0].message.content.strip()
+            if len(final_response) < 5:
+                final_response = tone_standardized
     except Exception as e:
-        logger.error(f"T5 translation error: {str(e)}")
+        logger.error(f"Translation error: {str(e)}")
         final_response = tone_standardized
-
-    pipeline_steps.append({
-        "step": "Translation",
-        "status": "done",
-        "detail": f"Translated to {LANGUAGE_MAP.get(language, language)}"
-    })
 
     # ─── Step 5: Quality Score ────────────────────────
     pipeline_steps.append({

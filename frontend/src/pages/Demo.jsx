@@ -92,7 +92,7 @@ export default function Demo() {
         setMessages(prev => [...prev, {
           id: Date.now(),
           role: 'ai',
-          text: `⚡ This query needs a human representative — ${data.escalation_reason}`,
+          text: `⚡ This query needs a human representative - ${data.escalation_reason}`,
           label: 'Escalated to representative'
         }])
       } else {
@@ -158,7 +158,7 @@ export default function Demo() {
             </span>
           </h1>
           <p className="text-gray-400 text-lg max-w-xl mx-auto">
-            Type in any Indian language — watch Groq AI, tone standardization
+            Type in any Indian language - watch Groq AI, tone standardization
             and translation work live through our real pipeline.
           </p>
         </motion.div>
@@ -179,7 +179,7 @@ export default function Demo() {
                     BrainWrites AI
                   </p>
                   <p className="text-purple-200 text-xs capitalize">
-                    {selectedLang} · {selectedTone} tone — Live
+                    {selectedLang} · {selectedTone} tone - Live
                   </p>
                 </div>
                 <div className="ml-auto flex items-center gap-1">
@@ -418,7 +418,7 @@ export default function Demo() {
             </div>
         </div>
 
-        {/* CTA — Full Width Below */}
+        {/* CTA - Full Width Below */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -440,7 +440,7 @@ export default function Demo() {
       </div>
 
       <footer className="border-t border-purple-100 py-8 text-center text-sm text-gray-400">
-        &copy; {new Date().getFullYear()} BrainWrites — Built for Bharat, powered by AI
+        &copy; {new Date().getFullYear()} BrainWrites - Built for Bharat, powered by AI
       </footer>
 
     </div>

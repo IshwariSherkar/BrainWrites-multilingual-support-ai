@@ -4,7 +4,7 @@ from app.core.logging import get_logger
 from app.core.exceptions import NotFoundException
 from app.core.enums import ConversationStatus
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logger = get_logger(__name__)
 
@@ -29,6 +29,17 @@ class ConversationRepository:
             {"conversationId": conversation_id}
         )
         return Conversation(**conversation_dict) if conversation_dict else None
+
+    async def find_open_older_than(
+        self, hours: int = 24
+    ) -> List[Conversation]:
+        cutoff = datetime.utcnow() - timedelta(hours=hours)
+        cursor = self.collection.find({
+            "status": "open",
+            "created_at": {"$lt": cutoff}
+        })
+        conversations = await cursor.to_list(length=None)
+        return [Conversation(**c) for c in conversations]
 
     # admin uses this to see all conversations across their whole team
     async def find_by_company_id(

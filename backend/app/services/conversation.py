@@ -91,6 +91,7 @@ class ConversationService:
             f"Conversation created: {created.conversationId}"
         )
         return ConversationSchema(**created.model_dump())
+    
 
     async def get_conversation(
         self, conversation_id: str
@@ -164,19 +165,19 @@ class ConversationService:
 
         customer_message = data.customer_message
 
-        # Step 1 — detect if closing message
+        # Step 1 - detect if closing message
         is_closing = self._detect_closing_message(customer_message)
 
-        # Step 2 — classify complaint topic
+        # Step 2 - classify complaint topic
         complaint_topic = self._classify_topic(customer_message)
 
-        # Step 3 — try Groq AI first
+        # Step 3 - try Groq AI first
         groq_response, escalate, escalation_reason = (
             await self._get_ai_response(customer_message, company)
         )
 
         if escalate:
-            # Groq couldn't handle it — escalate to representative
+            # Groq couldn't handle it - escalate to representative
             await self.conversation_repository.update_status(
                 conversation_id,
                 ConversationStatus.OPEN
@@ -202,7 +203,7 @@ class ConversationService:
             await self.message_repository.create(message)
             return MessageSchema(**message.model_dump())
 
-        # Step 4 — process through ML pipeline
+        # Step 4 - process through ML pipeline
         detected_tone = self._detect_sentiment(customer_message)
         effective_tone = detected_tone or company.default_tone
 
@@ -226,7 +227,7 @@ class ConversationService:
             customer_lang_enum  # use customer language, not company output language
         )
 
-        # Step 5 — compute quality score
+        # Step 5 - compute quality score
         quality_score = self._compute_quality_score(
             groq_response,
             processed_text,
@@ -234,7 +235,7 @@ class ConversationService:
             company.output_language
         )
 
-        # Step 6 — save message to MongoDB
+        # Step 6 - save message to MongoDB
         message = Message(
             conversationId=conversation_id,
             companyId=company_id,
@@ -250,7 +251,7 @@ class ConversationService:
         )
         saved_message = await self.message_repository.create(message)
 
-        # Step 7 — update conversation quality score
+        # Step 7 - update conversation quality score
         await self.conversation_repository.update_quality_score(
             conversation_id, quality_score
         )
@@ -279,21 +280,21 @@ class ConversationService:
                 details={"company_id": company_id}
             )
 
-        # Step 1 — generate recommendation using ML pipeline
+        # Step 1 - generate recommendation using ML pipeline
         recommendation = await self._run_ml_pipeline(
             data.response_text,
             company.default_tone,
             company.output_language
         )
 
-        # Step 2 — use approved text or recommendation
+        # Step 2 - use approved text or recommendation
         final_text = (
             recommendation
             if data.approve_recommendation
             else data.response_text
         )
 
-        # Step 3 — compute quality score
+        # Step 3 - compute quality score
         quality_score = self._compute_quality_score(
             data.response_text,
             final_text,
@@ -301,13 +302,13 @@ class ConversationService:
             company.output_language
         )
 
-        # Step 4 — detect closing message
+        # Step 4 - detect closing message
         is_closing = self._detect_closing_message(data.response_text)
 
-        # Step 5 — classify topic
+        # Step 5 - classify topic
         complaint_topic = self._classify_topic(data.response_text)
 
-        # Step 6 — save to MongoDB
+        # Step 6 - save to MongoDB
         message = Message(
             conversationId=conversation_id,
             companyId=company_id,
@@ -325,12 +326,12 @@ class ConversationService:
         )
         saved_message = await self.message_repository.create(message)
 
-        # Step 7 — update representative performance
+        # Step 7 - update representative performance
         await self.representative_repository.update_performance(
             representative_id, quality_score
         )
 
-        # Step 8 — update conversation quality score
+        # Step 8 - update conversation quality score
         await self.conversation_repository.update_quality_score(
             conversation_id, quality_score
         )
@@ -378,7 +379,7 @@ class ConversationService:
                                 "For refund requests: acknowledge, say refunds take 5-7 business days, and ask for order ID. "
                                 "For order status: ask for order ID and say you will check immediately. "
                                 "For general queries: answer helpfully and professionally. "
-                                "Never say you don't have access to systems — instead give a helpful generic response. "
+                                "Never say you don't have access to systems - instead give a helpful generic response. "
                                 "If the query involves sensitive account data like passwords or payments, start with ESCALATE: followed by reason. "
                                 "Otherwise start with CONFIDENT: followed by your response. "
                                 "Keep responses under 3 sentences. Be warm and professional."
@@ -492,7 +493,7 @@ class ConversationService:
         tone: ToneType,
         output_language: SupportedLanguage
     ) -> str:
-        # Step 1 — tone standardization using T5
+        # Step 1 - tone standardization using T5
         prompt = f"Convert to {tone.value} tone: {text.strip()}"
         inputs = tokenizer(
             prompt,
@@ -511,7 +512,7 @@ class ConversationService:
             outputs[0], skip_special_tokens=True
         )
 
-        # Step 2 — translation if needed
+        # Step 2 - translation if needed
         if output_language != SupportedLanguage.ENGLISH:
             tone_standardized = self._translate(
                 tone_standardized, output_language
@@ -525,11 +526,24 @@ class ConversationService:
         from groq import Groq
         from app.core.config import settings
         client = Groq(api_key=settings.GROQ_API_KEY)
-        lang_name = target_language.value.capitalize()
+        
+        lang_instructions = {
+            "hindi": "Translate to casual conversational Hindi mixed with some English words (Hinglish). Like how Indians actually speak - not textbook Hindi. Example: 'Aapka order 24 hours mein deliver ho jayega, don't worry!' Return only the translated text.",
+            "marathi": "Translate to casual conversational Marathi mixed with some English words. Like how Pune/Mumbai people actually speak - not textbook Marathi. Example: 'Tumcha order lवकरच येईल, don't worry!' Return only the translated text.",
+            "gujarati": "Translate to casual conversational Gujarati mixed with some English words. Like how Gujaratis actually speak in daily life - not textbook Gujarati. Return only the translated text.",
+            "punjabi": "Translate to casual conversational Punjabi mixed with some English words. Like how Punjabis actually speak - not textbook Punjabi. Return only the translated text.",
+        }
+        
+        lang_name = target_language.value.lower()
+        instruction = lang_instructions.get(
+            lang_name,
+            f"Translate to {lang_name}. Return only the translated text."
+        )
+        
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {"role": "system", "content": f"Translate the following English text to {lang_name}. Return only the translated text, nothing else."},
+                {"role": "system", "content": instruction},
                 {"role": "user", "content": text}
             ]
         )
@@ -600,18 +614,18 @@ class ConversationService:
     ) -> float:
         score = 0.0
 
-        # 40 points — was tone applied
+        # 40 points - was tone applied
         if processed and original != processed:
             score += 40.0
 
-        # 30 points — is response a reasonable length
+        # 30 points - is response a reasonable length
         word_count = len(processed.split()) if processed else 0
         if 10 <= word_count <= 200:
             score += 30.0
         elif word_count > 0:
             score += 15.0
 
-        # 30 points — does processed text exist and is not empty
+        # 30 points - does processed text exist and is not empty
         if processed and len(processed.strip()) > 0:
             score += 30.0
 

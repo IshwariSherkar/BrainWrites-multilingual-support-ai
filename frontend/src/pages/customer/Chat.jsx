@@ -42,14 +42,26 @@ export default function CustomerChat() {
       toast.error('Please fill all fields')
       return
     }
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(form.email)) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+    // Phone validation
+    const phoneRegex = /^[0-9]{10}$/
+    if (!phoneRegex.test(form.phone.replace(/\s+/g, ''))) {
+      toast.error('Please enter a valid 10-digit phone number')
+      return
+    }
     setFormLoading(true)
     try {
-      // Step 1 — get company ID from slug
+      // Step 1 - get company ID from slug
       const companyRes = await getCompanyBySlug(companySlug)
       const cId = companyRes.data.data.company_id
       setCompanyId(cId)
 
-      // Step 2 — create conversation with company ID header
+      // Step 2 - create conversation with company ID header
       const res = await createConversation(
         {
           customer_name: form.name,
@@ -62,7 +74,7 @@ export default function CustomerChat() {
       const convId = res.data.data.conversationId
       setConversationId(convId)
 
-      // Step 3 — show greeting
+      // Step 3 - show greeting
       setMessages([{
         id: Date.now(),
         role: 'ai',
@@ -98,13 +110,13 @@ export default function CustomerChat() {
     setSending(true)
     try {
       const res = await sendCustomerMessage(
-      conversationId,
-      { 
-        customer_message: userMessage,
-        customer_language: form.language  // add this
-      },
-      companyId
-    )
+        conversationId,
+        {
+          customer_message: userMessage,
+          customer_language: form.language
+        },
+        companyId
+      )
 
       const data = res.data.data
       setMessages(prev => [
@@ -212,11 +224,10 @@ export default function CustomerChat() {
                       <button
                         key={lang}
                         onClick={() => setForm({ ...form, language: lang })}
-                        className={`py-2 px-3 rounded-xl text-sm font-medium border transition capitalize ${
-                          form.language === lang
+                        className={`py-2 px-3 rounded-xl text-sm font-medium border transition capitalize ${form.language === lang
                             ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-transparent'
                             : 'border-purple-100 text-gray-500 hover:border-purple-300'
-                        }`}
+                          }`}
                       >
                         {lang}
                       </button>
@@ -290,11 +301,10 @@ export default function CustomerChat() {
                             </p>
                           </div>
                         ) : (
-                          <div className={`px-4 py-3 rounded-2xl text-sm ${
-                            msg.role === 'customer'
+                          <div className={`px-4 py-3 rounded-2xl text-sm ${msg.role === 'customer'
                               ? 'bg-gradient-to-r from-purple-600 to-indigo-500 text-white rounded-tr-none'
                               : 'bg-purple-50 border border-purple-100 text-gray-700 rounded-tl-none'
-                          }`}>
+                            }`}>
                             {msg.text}
                           </div>
                         )}

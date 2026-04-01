@@ -7,7 +7,7 @@ const features = [
   {
     icon: <Sparkles className="w-6 h-6 text-purple-400" />,
     title: "AI Powered Responses",
-    description: "Groq AI handles common customer queries instantly — no human agent needed for routine questions."
+    description: "Groq AI handles common customer queries instantly - no human agent needed for routine questions."
   },
   {
     icon: <Languages className="w-6 h-6 text-purple-400" />,
@@ -17,7 +17,7 @@ const features = [
   {
     icon: <ShieldCheck className="w-6 h-6 text-purple-400" />,
     title: "Tone Standardization",
-    description: "Every response is automatically rewritten to match your brand tone — professional, empathetic, formal or friendly."
+    description: "Every response is automatically rewritten to match your brand tone - professional, empathetic, formal or friendly."
   },
   {
     icon: <UserRound className="w-6 h-6 text-purple-400" />,
@@ -32,7 +32,7 @@ const features = [
   {
     icon: <Mail className="w-6 h-6 text-purple-400" />,
     title: "Daily Digest Emails",
-    description: "Every morning your manager gets a digest — total conversations, quality scores, language breakdown and worst responses."
+    description: "Every morning your manager gets a digest - total conversations, quality scores, language breakdown and worst responses."
   }
 ]
 
@@ -68,7 +68,7 @@ export default function Landing() {
           className="mt-6 max-w-2xl mx-auto text-gray-500 text-lg"
         >
           BrainWrites helps Indian businesses deliver consistent, multilingual 
-          customer support — powered by AI, built for Bharat.
+          customer support - powered by AI, built for Bharat.
         </motion.p>
 
         <motion.div
@@ -169,7 +169,7 @@ export default function Landing() {
 
       {/* Footer */}
       <footer className="border-t border-purple-100 py-10 text-center text-sm text-gray-400">
-        &copy; {new Date().getFullYear()} BrainWrites — Built for Bharat, powered by AI
+        &copy; {new Date().getFullYear()} BrainWrites - Built for Bharat, powered by AI
       </footer>
 
     </div>

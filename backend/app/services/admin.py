@@ -31,7 +31,7 @@ class AdminService:
     async def register_admin(
         self, data: CompanyRegisterRequest
     ) -> CompanyProfileSchema:
-        # Step 1 — create auth credentials
+        # Step 1 - create auth credentials
         admin_auth_data = UserRegisterRequest(
             email=data.email,
             password=data.password,
@@ -39,7 +39,7 @@ class AdminService:
         )
         user = await self.auth_service.register(admin_auth_data)
 
-        # Step 2 — create company profile
+        # Step 2 - create company profile
         company = CompanyProfile(
             userId=user.userId,
             email=data.email,
@@ -84,32 +84,67 @@ class AdminService:
             )
     
     async def add_manager(
-        self, company_id: str, email: str, full_name: str
-    ) -> CompanyProfileSchema:
-        profile = await self.company_repository.find_by_user_id(company_id)
-        if not profile:
-            raise NotFoundException(message="Company not found", details={})
-        
-        if email not in profile.manager_emails:
-            profile.manager_emails.append(email)
-            await self.company_repository.update(
-                company_id, {"manager_emails": profile.manager_emails}
-            )
-        return CompanyProfileSchema(**profile.model_dump())
+            self, company_id: str, email: str, full_name: str
+        ) -> CompanyProfileSchema:
+            profile = await self.company_repository.find_by_user_id(company_id)
+            if not profile:
+                raise NotFoundException(message="Company not found", details={})
+            
+            if email not in profile.manager_emails:
+                profile.manager_emails.append(email)
+                await self.company_repository.update(
+                    company_id, {"manager_emails": profile.manager_emails}
+                )
+
+            # Auto-create auth_users entry if not exists
+            existing = await self.auth_service.auth_repository.find_by_email(email)
+            if not existing:
+                from app.schemas.auth import UserRegisterRequest
+                from app.core.enums import EntityType
+                import uuid
+                from app.models.user import AuthUser
+                from app.core.security import get_password_hash
+                user = AuthUser(
+                    userId=str(uuid.uuid4()),
+                    email=email,
+                    full_name=full_name,
+                    hashed_password=get_password_hash(str(uuid.uuid4())),
+                    entity_type=EntityType.ADMIN
+                )
+                await self.auth_service.auth_repository.create(user)
+
+            return CompanyProfileSchema(**profile.model_dump())
 
     async def add_representative(
-        self, company_id: str, email: str, full_name: str
-    ) -> CompanyProfileSchema:
-        profile = await self.company_repository.find_by_user_id(company_id)
-        if not profile:
-            raise NotFoundException(message="Company not found", details={})
-        
-        if email not in profile.representative_emails:
-            profile.representative_emails.append(email)
-            await self.company_repository.update(
-                company_id, {"representative_emails": profile.representative_emails}
-            )
-        return CompanyProfileSchema(**profile.model_dump())
+            self, company_id: str, email: str, full_name: str
+        ) -> CompanyProfileSchema:
+            profile = await self.company_repository.find_by_user_id(company_id)
+            if not profile:
+                raise NotFoundException(message="Company not found", details={})
+            
+            if email not in profile.representative_emails:
+                profile.representative_emails.append(email)
+                await self.company_repository.update(
+                    company_id, {"representative_emails": profile.representative_emails}
+                )
+
+            # Auto-create auth_users entry if not exists
+            existing = await self.auth_service.auth_repository.find_by_email(email)
+            if not existing:
+                import uuid
+                from app.models.user import AuthUser
+                from app.core.security import get_password_hash
+                from app.core.enums import EntityType
+                user = AuthUser(
+                    userId=str(uuid.uuid4()),
+                    email=email,
+                    full_name=full_name,
+                    hashed_password=get_password_hash(str(uuid.uuid4())),
+                    entity_type=EntityType.REPRESENTATIVE
+                )
+                await self.auth_service.auth_repository.create(user)
+
+            return CompanyProfileSchema(**profile.model_dump())
 
     async def check_manager_email(
         self, email: str

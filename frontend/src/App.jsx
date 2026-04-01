@@ -24,7 +24,6 @@ import ManagerDashboard from './pages/manager/Dashboard.jsx'
 
 // Representative
 import RepLogin from './pages/representative/Login.jsx'
-import RepRegister from './pages/representative/Register.jsx'
 import RepDashboard from './pages/representative/Dashboard.jsx'
 
 // Customer
@@ -72,14 +71,13 @@ function AppInner() {
 
         {/* Representative */}
         <Route path="/representative/login" element={<RepLogin />} />
-        <Route path="/representative/register" element={<RepRegister />} />
         <Route path="/representative/dashboard" element={
           <PrivateRoute role="representative">
             <RepDashboard />
           </PrivateRoute>
         } />
 
-        {/* Customer — public, no login */}
+        {/* Customer - public, no login */}
         <Route path="/chat/:companySlug" element={<CustomerChat />} />
       </Routes>
 

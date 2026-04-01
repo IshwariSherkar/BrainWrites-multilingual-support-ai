@@ -39,7 +39,7 @@ export default function RepLogin() {
         >
           <SignIn
             routing="hash"
-            fallbackRedirectUrl="/representative/register"
+            fallbackRedirectUrl="/representative/dashboard"
             appearance={{
               elements: {
                 rootBox: "shadow-none",
@@ -56,15 +56,9 @@ export default function RepLogin() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="mt-6 text-sm text-gray-400"
+          className="mt-6 text-sm text-gray-400 text-center"
         >
-          New representative?{' '}
-          <span
-            onClick={() => navigate('/representative/register')}
-            className="text-indigo-600 cursor-pointer hover:underline font-medium"
-          >
-            Register here
-          </span>
+          Access is granted by your company manager only.
         </motion.p>
 
       </div>

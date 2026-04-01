@@ -17,7 +17,8 @@ import {
   getCompanyTeam,
   getAllConversations,
   triggerDigest,
-  updateCompanyProfile
+  updateCompanyProfile,
+  addRepresentative
 } from '../../services/api'
 import { toast } from 'react-toastify'
 import logo from '../../assets/logo.svg'
@@ -166,11 +167,10 @@ export default function ManagerDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-500 text-white shadow-md'
-                    : 'text-gray-500 hover:text-purple-700 hover:bg-purple-50'
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${activeTab === tab.id
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-500 text-white shadow-md'
+                  : 'text-gray-500 hover:text-purple-700 hover:bg-purple-50'
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 <span className="hidden sm:block">{tab.label}</span>
@@ -201,7 +201,11 @@ export default function ManagerDashboard() {
               <ConversationsTab conversations={conversations} />
             )}
             {activeTab === 'team' && (
-              <TeamTab team={team} />
+              <TeamTab
+                team={team}
+                companyProfile={company}
+                onRefresh={fetchAll}
+              />
             )}
             {activeTab === 'settings' && (
               <SettingsTab
@@ -226,15 +230,15 @@ function OverviewTab({ company, analytics, conversations, onDigest, digestLoadin
 
   const languageData = analytics?.language_distribution
     ? Object.entries(analytics.language_distribution).map(
-        ([lang, count]) => ({ name: lang, value: count })
-      )
+      ([lang, count]) => ({ name: lang, value: count })
+    )
     : []
 
   const topicData = analytics?.top_complaint_topics
     ? analytics.top_complaint_topics.map(t => ({
-        name: t.topic,
-        count: t.count
-      }))
+      name: t.topic,
+      count: t.count
+    }))
     : []
 
   return (
@@ -420,18 +424,16 @@ function ConversationsTab({ conversations }) {
               <span className="text-xs text-gray-400 capitalize">
                 {conv.complaint_topic || 'general'}
               </span>
-              <span className={`text-sm font-semibold ${
-                conv.quality_score >= 70
-                  ? 'text-green-600'
-                  : conv.quality_score >= 40
+              <span className={`text-sm font-semibold ${conv.quality_score >= 70
+                ? 'text-green-600'
+                : conv.quality_score >= 40
                   ? 'text-yellow-600'
                   : 'text-red-500'
-              }`}>
-                {conv.quality_score ?? '—'}/100
+                }`}>
+                {conv.quality_score ?? '-'}/100
               </span>
-              <span className={`text-xs px-2 py-1 rounded-lg w-fit capitalize ${
-                STATUS_COLORS[conv.status] || 'bg-gray-100 text-gray-500'
-              }`}>
+              <span className={`text-xs px-2 py-1 rounded-lg w-fit capitalize ${STATUS_COLORS[conv.status] || 'bg-gray-100 text-gray-500'
+                }`}>
                 {conv.status}
               </span>
             </motion.div>
@@ -443,9 +445,107 @@ function ConversationsTab({ conversations }) {
 }
 
 // ─── Team Tab ─────────────────────────────────────────
-function TeamTab({ team }) {
+function TeamTab({ team, companyProfile, onRefresh }) {
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [form, setForm] = useState({ full_name: '', email: '' })
+  const [adding, setAdding] = useState(false)
+
+  const handleAddRep = async () => {
+    if (!form.full_name || !form.email) {
+      toast.error('Please fill all fields')
+      return
+    }
+    setAdding(true)
+    try {
+      await addRepresentative(form)
+      toast.success('Representative added successfully!')
+      setForm({ full_name: '', email: '' })
+      setShowAddForm(false)
+      onRefresh()
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to add representative')
+    } finally {
+      setAdding(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
+
+      {/* Add Representative Button */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-lg font-semibold text-gray-700">Representatives</h2>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-500 text-white text-sm font-semibold hover:opacity-90 transition"
+        >
+          <span>{showAddForm ? '✕ Cancel' : '+ Add Representative'}</span>
+        </button>
+      </div>
+
+      {/* Add Form */}
+      {showAddForm && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/80 backdrop-blur border border-purple-100 rounded-2xl p-6 space-y-4"
+        >
+          <h3 className="font-semibold text-gray-700">Add New Representative</h3>
+          <p className="text-xs text-gray-400">
+            The representative will be able to login using Google with this email address.
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">Full Name</label>
+              <input
+                value={form.full_name}
+                onChange={e => setForm({ ...form, full_name: e.target.value })}
+                placeholder="e.g. Priya Sharma"
+                className="w-full px-4 py-2.5 rounded-xl border border-purple-100 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 bg-purple-50/30"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">Email Address</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
+                placeholder="priya@company.com"
+                className="w-full px-4 py-2.5 rounded-xl border border-purple-100 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 bg-purple-50/30"
+              />
+            </div>
+          </div>
+          <button
+            onClick={handleAddRep}
+            disabled={adding}
+            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-500 text-white text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+          >
+            {adding ? 'Adding...' : 'Add Representative'}
+          </button>
+        </motion.div>
+      )}
+
+      {/* Registered Reps from company profile */}
+      {companyProfile?.representative_emails?.length > 0 && (
+        <div className="bg-white/80 backdrop-blur border border-purple-100 rounded-2xl p-6">
+          <h3 className="font-semibold text-gray-700 mb-3">Registered Emails</h3>
+          <div className="space-y-2">
+            {companyProfile.representative_emails.map((email, i) => (
+              <div key={i} className="flex items-center gap-3 py-2 px-4 rounded-xl bg-purple-50/50">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-r from-purple-400 to-indigo-400 flex items-center justify-center text-white text-xs font-bold">
+                  {email[0].toUpperCase()}
+                </div>
+                <span className="text-sm text-gray-600">{email}</span>
+                <span className="ml-auto text-xs px-2 py-1 rounded-lg bg-green-100 text-green-600">
+                  Can login
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Performance Table */}
       <div className="bg-white/80 backdrop-blur border border-purple-100 rounded-2xl overflow-hidden">
         <div className="grid grid-cols-4 px-6 py-3 border-b border-purple-50 text-xs font-semibold text-gray-400 uppercase tracking-wider">
           <span>Name</span>
@@ -453,10 +553,9 @@ function TeamTab({ team }) {
           <span>Handled</span>
           <span>Avg Score</span>
         </div>
-
         {team.length === 0 ? (
           <div className="py-16 text-center text-gray-300 text-sm">
-            No representatives yet
+            No representatives active yet
           </div>
         ) : (
           team.map((rep, i) => (
@@ -471,21 +570,14 @@ function TeamTab({ team }) {
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-indigo-400 flex items-center justify-center text-white text-xs font-bold">
                   {rep.full_name?.[0] || 'R'}
                 </div>
-                <span className="text-sm font-medium text-gray-700">
-                  {rep.full_name}
-                </span>
+                <span className="text-sm font-medium text-gray-700">{rep.full_name}</span>
               </div>
               <span className="text-xs px-2 py-1 rounded-lg bg-indigo-50 text-indigo-600 w-fit capitalize">
                 {rep.language}
               </span>
-              <span className="text-sm text-gray-600">
-                {rep.total_handled ?? 0}
-              </span>
-              <span className={`text-sm font-semibold ${
-                (rep.avg_score ?? 0) >= 70
-                  ? 'text-green-600'
-                  : 'text-yellow-600'
-              }`}>
+              <span className="text-sm text-gray-600">{rep.total_handled ?? 0}</span>
+              <span className={`text-sm font-semibold ${(rep.avg_score ?? 0) >= 70 ? 'text-green-600' : 'text-yellow-600'
+                }`}>
                 {rep.avg_score ?? 0}/100
               </span>
             </motion.div>
@@ -504,9 +596,8 @@ function SettingsTab({ settings, setSettings, onSave, loading, company }) {
 
   if (!settings) return null
 
-  const chatUrl = `${window.location.origin}/chat/${
-    company?.company_name?.toLowerCase().replace(/\s+/g, '-') || 'your-company'
-  }`
+  const chatUrl = `${window.location.origin}/chat/${company?.company_name?.toLowerCase().replace(/\s+/g, '-') || 'your-company'
+    }`
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -519,11 +610,10 @@ function SettingsTab({ settings, setSettings, onSave, loading, company }) {
             <button
               key={tone}
               onClick={() => setSettings({ ...settings, default_tone: tone })}
-              className={`py-2 px-4 rounded-xl text-sm font-medium border transition capitalize ${
-                settings.default_tone === tone
-                  ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-transparent'
-                  : 'border-purple-100 text-gray-500 hover:border-purple-300'
-              }`}
+              className={`py-2 px-4 rounded-xl text-sm font-medium border transition capitalize ${settings.default_tone === tone
+                ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-transparent'
+                : 'border-purple-100 text-gray-500 hover:border-purple-300'
+                }`}
             >
               {tone}
             </button>
@@ -539,11 +629,10 @@ function SettingsTab({ settings, setSettings, onSave, loading, company }) {
             <button
               key={lang}
               onClick={() => setSettings({ ...settings, output_language: lang })}
-              className={`py-2 px-3 rounded-xl text-sm font-medium border transition capitalize ${
-                settings.output_language === lang
-                  ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-transparent'
-                  : 'border-purple-100 text-gray-500 hover:border-purple-300'
-              }`}
+              className={`py-2 px-3 rounded-xl text-sm font-medium border transition capitalize ${settings.output_language === lang
+                ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-transparent'
+                : 'border-purple-100 text-gray-500 hover:border-purple-300'
+                }`}
             >
               {lang}
             </button>
@@ -562,11 +651,10 @@ function SettingsTab({ settings, setSettings, onSave, loading, company }) {
             <button
               key={provider}
               onClick={() => setSettings({ ...settings, ai_provider: provider })}
-              className={`py-2 px-3 rounded-xl text-sm font-medium border transition capitalize ${
-                settings.ai_provider === provider
-                  ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-transparent'
-                  : 'border-purple-100 text-gray-500 hover:border-purple-300'
-              }`}
+              className={`py-2 px-3 rounded-xl text-sm font-medium border transition capitalize ${settings.ai_provider === provider
+                ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-transparent'
+                : 'border-purple-100 text-gray-500 hover:border-purple-300'
+                }`}
             >
               {provider}
             </button>
@@ -607,7 +695,7 @@ function SettingsTab({ settings, setSettings, onSave, loading, company }) {
         )}
         {settings.ai_provider === 'groq' && (
           <p className="text-xs text-gray-400 mt-2">
-            Using our default Groq key — upgrade to Pro to use your own
+            Using our default Groq key - upgrade to Pro to use your own
           </p>
         )}
       </div>
@@ -625,13 +713,11 @@ function SettingsTab({ settings, setSettings, onSave, loading, company }) {
             ...settings,
             digest_enabled: !settings.digest_enabled
           })}
-          className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
-            settings.digest_enabled ? 'bg-purple-600' : 'bg-gray-200'
-          }`}
+          className={`relative w-12 h-6 rounded-full transition-all duration-300 ${settings.digest_enabled ? 'bg-purple-600' : 'bg-gray-200'
+            }`}
         >
-          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-300 ${
-            settings.digest_enabled ? 'left-7' : 'left-1'
-          }`} />
+          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-300 ${settings.digest_enabled ? 'left-7' : 'left-1'
+            }`} />
         </button>
       </div>
 

@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'motion/react'
 import { toast } from 'react-toastify'
 import { Users, UserPlus, LogOut, Building2, Copy, Check } from 'lucide-react'
 import { getCompanyProfile, addManager, addRepresentative } from '../../services/api'
-import Navbar from '../../components/Navbar'
 
 export default function CompanyDashboard() {
   const navigate = useNavigate()
@@ -95,7 +94,6 @@ export default function CompanyDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50">
-      <Navbar />
 
       <div className="max-w-4xl mx-auto px-6 pt-28 pb-16">
 

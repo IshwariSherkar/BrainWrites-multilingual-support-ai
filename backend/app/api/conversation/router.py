@@ -50,10 +50,38 @@ async def get_all_conversations(
         get_conversation_service
     )
 ) -> ConversationListResponse:
-    conversations = await (
-        conversation_service.get_company_conversations(
-            request.state.user.userId
+    from app.api.deps import get_admin_service
+    admin_service = get_admin_service()
+    # Handle both company owner and manager
+    company_id = request.state.user.userId
+    profile = await admin_service.get_profile(company_id)
+    if not profile:
+        mgr_profile = await admin_service.check_manager_email(
+            request.state.user.email
         )
+        if mgr_profile:
+            company_id = mgr_profile.userId
+    conversations = await (
+        conversation_service.get_company_conversations(company_id)
+    )
+    return ConversationListResponse(
+        success=True,
+        message="Conversations retrieved successfully",
+        data=[c.model_dump() for c in conversations]
+    )
+
+
+@router.get("/by-company/{company_id}", response_model=ConversationListResponse)
+@allowed_entities([EntityType.REPRESENTATIVE, EntityType.ADMIN])
+async def get_conversations_for_rep(
+    request: Request,
+    company_id: str,
+    conversation_service: ConversationService = Depends(
+        get_conversation_service
+    )
+) -> ConversationListResponse:
+    conversations = await (
+        conversation_service.get_company_conversations(company_id)
     )
     return ConversationListResponse(
         success=True,

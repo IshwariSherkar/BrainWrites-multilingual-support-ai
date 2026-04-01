@@ -336,7 +336,7 @@ export default function CompanyRegister() {
                   💳 Payment Required
                 </p>
                 <p className="text-blue-500 text-xs mb-3">
-                  {form.plan === 'pro' ? '₹999/month' : 'Custom pricing'} — Complete payment to activate your plan
+                  {form.plan === 'pro' ? '₹999/month' : 'Custom pricing'} - Complete payment to activate your plan
                 </p>
                 <button
                   onClick={() => setShowPayment(true)}
@@ -374,7 +374,7 @@ export default function CompanyRegister() {
                   />
                 </div>
                 <p className="text-xs text-gray-400 text-center">
-                  🔒 This is a demo — no real payment will be processed
+                  🔒 This is a demo - no real payment will be processed
                 </p>
               </div>
             )}

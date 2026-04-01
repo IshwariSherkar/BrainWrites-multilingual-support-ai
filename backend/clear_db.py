@@ -10,7 +10,7 @@ async def clear_db():
     await db["conversations"].drop()
     await db["messages"].drop()
     await db["digests"].drop()
-    print("✅ All collections dropped!")
+    print(" All collections dropped!")
     client.close()
 
 asyncio.run(clear_db())

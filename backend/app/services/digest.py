@@ -35,42 +35,42 @@ class DigestService:
         admin_id: str,
         trigger: DigestTrigger
     ) -> Digest:
-        # Step 1 — get yesterday's date range
+        # Step 1 - get yesterday's date range
         today = datetime.utcnow().replace(
-            hour=0, minute=0, second=0, microsecond=0
+            hour=23, minute=59, second=59, microsecond=0
         )
-        yesterday_start = today - timedelta(days=1)
+        yesterday_start = today - timedelta(days=30)
         yesterday_end = today
 
-        # Step 2 — get company details
+        # Step 2 - get company details
         company = await self.company_repository.find_by_user_id(
             company_id
         )
         if not company:
             raise ValueError("Company not found")
 
-        # Step 3 — collect stats from MongoDB
+        # Step 3 - collect stats from MongoDB
         stats = await self._collect_stats(
             company_id, yesterday_start, yesterday_end
         )
 
-        # Step 4 — build email content
+        # Step 4 - build email content
         email_content = self._build_email(
             company.company_name, stats, yesterday_start
         )
 
-        # Step 5 — send email to admin
+        # Step 5 - send email to admin
         self._send_email(
             to_email=company.email,
             subject=(
-                f"Daily Support Digest — "
+                f"Daily Support Digest - "
                 f"{yesterday_start.strftime('%d %b %Y')} | "
                 f"{company.company_name}"
             ),
             body=email_content
         )
 
-        # Step 6 — save digest record to MongoDB
+        # Step 6 - save digest record to MongoDB
         digest = Digest(
             companyId=company_id,
             adminId=admin_id,
@@ -189,14 +189,14 @@ class DigestService:
 
         # Worst messages lines
         worst_lines = "\n".join([
-            f"  Score: {m['quality_score']}/100 — "
-            f"{m['complaint_topic'].capitalize()} — "
+            f"  Score: {m['quality_score']}/100 - "
+            f"{m['complaint_topic'].capitalize()} - "
             f"Handled by: {m['handled_by']}"
             for m in stats.worst_messages
         ])
 
         return f"""
-Daily Support Digest — {date.strftime('%d %b %Y')}
+Daily Support Digest - {date.strftime('%d %b %Y')}
 Company: {company_name}
 {'='*50}
 

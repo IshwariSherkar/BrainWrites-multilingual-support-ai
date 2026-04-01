@@ -19,7 +19,7 @@ async def login(
     response: Response,
     auth_service: AuthService = Depends(get_auth_service)
 ) -> TokenResponse:
-    # Step 1 — authenticate credentials
+    # Step 1 - authenticate credentials
     user = await auth_service.authenticate(
         data.username, data.password
     )
@@ -30,7 +30,7 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Step 2 — check entity type matches
+    # Step 2 - check entity type matches
     if user.entity_type != data.entity_type:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -38,12 +38,12 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Step 3 — create tokens
+    # Step 3 - create tokens
     access_token, refresh_token = await auth_service.create_tokens(
         user
     )
 
-    # Step 4 — set refresh token in HTTP-only cookie
+    # Step 4 - set refresh token in HTTP-only cookie
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,

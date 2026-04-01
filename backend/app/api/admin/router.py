@@ -35,9 +35,15 @@ async def get_my_profile(
     request: Request,
     admin_service: AdminService = Depends(get_admin_service)
 ) -> CompanyProfileResponse:
+    # First try direct lookup (company owner)
     profile = await admin_service.get_profile(
         request.state.user.userId
     )
+    # If not found, try manager lookup by email
+    if not profile:
+        profile = await admin_service.check_manager_email(
+            request.state.user.email
+        )
     if not profile:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -57,9 +63,16 @@ async def update_my_profile(
     data: CompanyProfileUpdate,
     admin_service: AdminService = Depends(get_admin_service)
 ) -> CompanyProfileResponse:
-    await admin_service.update_profile(
-        request.state.user.userId, data
-    )
+    # Get correct company_id for both owner and manager
+    company_id = request.state.user.userId
+    profile = await admin_service.get_profile(company_id)
+    if not profile:
+        mgr_profile = await admin_service.check_manager_email(
+            request.state.user.email
+        )
+        if mgr_profile:
+            company_id = mgr_profile.userId
+    await admin_service.update_profile(company_id, data)
     return CompanyProfileResponse(
         success=True,
         message="Profile updated successfully"
@@ -83,10 +96,20 @@ async def delete_my_profile(
 @allowed_entities([EntityType.ADMIN])
 async def trigger_digest(
     request: Request,
-    digest_service: DigestService = Depends(get_digest_service)
+    digest_service: DigestService = Depends(get_digest_service),
+    admin_service: AdminService = Depends(get_admin_service)
 ) -> CompanyProfileResponse:
+    # Get correct company_id for both owner and manager
+    company_id = request.state.user.userId
+    profile = await admin_service.get_profile(company_id)
+    if not profile:
+        mgr_profile = await admin_service.check_manager_email(
+            request.state.user.email
+        )
+        if mgr_profile:
+            company_id = mgr_profile.userId
     digest = await digest_service.send_digest(
-        company_id=request.state.user.userId,
+        company_id=company_id,
         admin_id=request.state.user.userId,
         trigger=DigestTrigger.MANUAL
     )
@@ -101,16 +124,32 @@ async def trigger_digest(
 @allowed_entities([EntityType.ADMIN])
 async def get_analytics(
     request: Request,
-    digest_service: DigestService = Depends(get_digest_service)
+    digest_service: DigestService = Depends(get_digest_service),
+    admin_service: AdminService = Depends(get_admin_service)
 ) -> CompanyProfileResponse:
     from datetime import datetime, timedelta
     today = datetime.utcnow().replace(
-        hour=0, minute=0, second=0, microsecond=0
+        hour=23, minute=59, second=59, microsecond=0
     )
-    yesterday_start = today - timedelta(days=1)
-    yesterday_end = today
+    start = today - timedelta(days=30)
     stats = await digest_service._collect_stats(
-        request.state.user.userId,
+        company_id,
+        start,
+        today
+    )
+
+    # Get correct company_id for both owner and manager
+    company_id = request.state.user.userId
+    profile = await admin_service.get_profile(company_id)
+    if not profile:
+        mgr_profile = await admin_service.check_manager_email(
+            request.state.user.email
+        )
+        if mgr_profile:
+            company_id = mgr_profile.userId
+
+    stats = await digest_service._collect_stats(
+        company_id,
         yesterday_start,
         yesterday_end
     )
@@ -119,6 +158,7 @@ async def get_analytics(
         message="Analytics retrieved successfully",
         data=stats.model_dump()
     )
+
 
 from app.schemas.admin import AddManagerRequest, AddRepresentativeRequest
 
@@ -129,10 +169,18 @@ async def add_manager(
     data: AddManagerRequest,
     admin_service: AdminService = Depends(get_admin_service)
 ):
-    await admin_service.add_manager(
-        request.state.user.userId, data.email, data.full_name
-    )
+    # Get correct company_id for both owner and manager
+    company_id = request.state.user.userId
+    profile = await admin_service.get_profile(company_id)
+    if not profile:
+        mgr_profile = await admin_service.check_manager_email(
+            request.state.user.email
+        )
+        if mgr_profile:
+            company_id = mgr_profile.userId
+    await admin_service.add_manager(company_id, data.email, data.full_name)
     return {"success": True, "message": "Manager added successfully"}
+
 
 @router.post("/representatives")
 @allowed_entities([EntityType.ADMIN])
@@ -141,10 +189,20 @@ async def add_representative(
     data: AddRepresentativeRequest,
     admin_service: AdminService = Depends(get_admin_service)
 ):
+    # Get correct company_id for both owner and manager
+    company_id = request.state.user.userId
+    profile = await admin_service.get_profile(company_id)
+    if not profile:
+        mgr_profile = await admin_service.check_manager_email(
+            request.state.user.email
+        )
+        if mgr_profile:
+            company_id = mgr_profile.userId
     await admin_service.add_representative(
-        request.state.user.userId, data.email, data.full_name
+        company_id, data.email, data.full_name
     )
     return {"success": True, "message": "Representative added successfully"}
+
 
 @router.get("/check-manager")
 async def check_manager_email(
@@ -166,6 +224,7 @@ async def check_manager_email(
         }
     }
 
+
 @router.get("/check-representative")
 async def check_representative_email(
     email: str,
@@ -185,6 +244,7 @@ async def check_representative_email(
             "company_name": profile.company_name
         }
     }
+
 
 @router.get("/by-slug/{slug}")
 async def get_company_by_slug(

@@ -2,11 +2,11 @@
 ### *Speak their language, win their trust.*
 
 
-Imagine you run a business in India. Your customers speak Marathi, Hindi, Gujarati, Punjabi — but your support team only speaks English. Every day, messages come in that your team struggles to understand, and responses go out that feel cold, robotic, or just wrong in tone.
+Imagine you run a business in India. Your customers speak Marathi, Hindi, Gujarati, Punjabi - but your support team only speaks English. Every day, messages come in that your team struggles to understand, and responses go out that feel cold, robotic, or just wrong in tone.
 
 **BrainWrites** was built to solve exactly this.
 
-It's an AI-powered multilingual customer support platform that sits between your customers and your team — understanding what customers write in any Indian language, generating warm and professional responses, standardizing the tone to match your brand, and delivering the reply back in the customer's own language.
+It's an AI-powered multilingual customer support platform that sits between your customers and your team - understanding what customers write in any Indian language, generating warm and professional responses, standardizing the tone to match your brand, and delivering the reply back in the customer's own language.
 
 Your customer writes in Marathi. Your AI responds in Marathi. Your brand sounds consistent. Your team stays in control.
 
@@ -64,19 +64,19 @@ BrainWrites/
 
 ##  ML Models
 
-### 1. Tone Standardization — Fine-tuned Flan-T5
+### 1. Tone Standardization - Fine-tuned Flan-T5
 - Base model: `google/flan-t5-base`
 - Trained on custom `tone_conversion_dataset.csv`
 - Converts AI responses to: **Formal**, **Friendly**, or **Empathetic** tone
 - Each company can set their preferred tone
 
-### 2. Translation — Custom Transformer (TensorFlow/Keras)
+### 2. Translation - Custom Transformer (TensorFlow/Keras)
 - Built from scratch: Encoder-Decoder with Multi-Head Attention
 - Trained on [AI4Bharat BPCC dataset](https://huggingface.co/datasets/ai4bharat/BPCC)
 - Supports: **English ↔ Hindi, Marathi, Gujarati, Punjabi**
 - Custom SentencePiece BPE tokenizer (vocab size: 8000)
 
-### 3. Response Generation — Groq AI (LLaMA 3.3 70B)
+### 3. Response Generation - Groq AI (LLaMA 3.3 70B)
 - Understands multilingual input (Hindi, Marathi, Gujarati, Punjabi, Hinglish)
 - Generates confident responses or escalates to human reps
 - Context-aware: knows the company name, industry, and tone preference
@@ -150,21 +150,21 @@ npm run dev
 
 ## Key Features
 
-- Multilingual Chat — customers write in any Indian language
-- Tone Standardization — formal, friendly, or empathetic — your choice
-- AI + Human Handoff** — AI handles common queries, escalates complex ones
-- Quality Scoring** — every response gets a quality score
-- Multi-company** — each company gets their own isolated environment
-- Role-based Access** — company, manager, and representative roles
-- Conversation Summaries** — T5-generated summaries when chats close
-- Daily Digests** — scheduled email summaries for managers
+- Multilingual Chat - customers write in any Indian language
+- Tone Standardization - formal, friendly, or empathetic - your choice
+- AI + Human Handoff** - AI handles common queries, escalates complex ones
+- Quality Scoring** - every response gets a quality score
+- Multi-company** - each company gets their own isolated environment
+- Role-based Access** - company, manager, and representative roles
+- Conversation Summaries** - T5-generated summaries when chats close
+- Daily Digests** - scheduled email summaries for managers
 
 
 
 ## About
 
 
-The goal was to explore how modern AI - large language models, fine-tuned transformers, and custom neural networks — can be combined into a real, usable product that solves a genuine problem faced by Indian businesses every day.
+The goal was to explore how modern AI - large language models, fine-tuned transformers, and custom neural networks - can be combined into a real, usable product that solves a genuine problem faced by Indian businesses every day.
 
   
 <p align="center">

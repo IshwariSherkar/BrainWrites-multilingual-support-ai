@@ -69,7 +69,7 @@ export default function About() {
           className="mt-4 max-w-xl mx-auto text-gray-500 text-lg"
         >
           Everything your Indian business needs for consistent,
-          multilingual customer support — powered by AI.
+          multilingual customer support - powered by AI.
         </motion.p>
       </section>
 
@@ -145,7 +145,7 @@ export default function About() {
           className="mt-8 text-center bg-orange-50 border border-orange-100 rounded-2xl p-6"
         >
           <p className="text-orange-700 text-sm font-medium">
-            ⚡ When AI can't handle a query — it automatically escalates to
+            ⚡ When AI can't handle a query - it automatically escalates to
             your human representative with full context preserved.
           </p>
         </motion.div>

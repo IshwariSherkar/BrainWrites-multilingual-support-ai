@@ -7,10 +7,11 @@ import {
   AlertCircle, LogOut, Send, Bot, User, Bell
 } from 'lucide-react'
 import {
-  getAllConversations,
+  getConversationsByCompany,
   getConversation,
   sendRepMessage,
-  closeConversation
+  closeConversation,
+  checkRepresentativeEmail
 } from '../../services/api'
 import { toast } from 'react-toastify'
 import logo from '../../assets/logo.svg'
@@ -29,6 +30,7 @@ export default function RepDashboard() {
   const [selectedConv, setSelectedConv] = useState(null)
   const [loading, setLoading] = useState(true)
   const [convLoading, setConvLoading] = useState(false)
+  const [companyId, setCompanyId] = useState(null)
 
   useEffect(() => {
     fetchConversations()
@@ -37,7 +39,12 @@ export default function RepDashboard() {
   const fetchConversations = async () => {
     setLoading(true)
     try {
-      const res = await getAllConversations()
+      const repCheck = await checkRepresentativeEmail(
+        user?.primaryEmailAddress?.emailAddress
+      )
+      const cId = repCheck.data.data.company_id
+      setCompanyId(cId)
+      const res = await getConversationsByCompany(cId)
       setConversations(res.data.data || [])
     } catch (err) {
       toast.error('Failed to load conversations')
@@ -158,7 +165,7 @@ export default function RepDashboard() {
         {/* Main Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* Left — Conversation List */}
+          {/* Left - Conversation List */}
           <div className="lg:col-span-1">
 
             {/* Tabs */}
@@ -168,8 +175,8 @@ export default function RepDashboard() {
                 const count = tab.id === 'active'
                   ? activeConvs.length
                   : tab.id === 'escalated'
-                  ? escalatedConvs.length
-                  : historyConvs.length
+                    ? escalatedConvs.length
+                    : historyConvs.length
 
                 return (
                   <button
@@ -178,20 +185,18 @@ export default function RepDashboard() {
                       setActiveTab(tab.id)
                       setSelectedConv(null)
                     }}
-                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 ${
-                      activeTab === tab.id
-                        ? 'bg-gradient-to-r from-indigo-600 to-purple-500 text-white shadow-md'
-                        : 'text-gray-500 hover:text-indigo-700 hover:bg-indigo-50'
-                    }`}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 ${activeTab === tab.id
+                      ? 'bg-gradient-to-r from-indigo-600 to-purple-500 text-white shadow-md'
+                      : 'text-gray-500 hover:text-indigo-700 hover:bg-indigo-50'
+                      }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
                     {tab.label}
                     {count > 0 && (
-                      <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                        activeTab === tab.id
-                          ? 'bg-white/20 text-white'
-                          : 'bg-indigo-100 text-indigo-600'
-                      }`}>
+                      <span className={`px-1.5 py-0.5 rounded-full text-xs ${activeTab === tab.id
+                        ? 'bg-white/20 text-white'
+                        : 'bg-indigo-100 text-indigo-600'
+                        }`}>
                         {count}
                       </span>
                     )}
@@ -205,7 +210,7 @@ export default function RepDashboard() {
               <AnimatePresence>
                 {(activeTab === 'active' ? activeConvs
                   : activeTab === 'escalated' ? escalatedConvs
-                  : historyConvs
+                    : historyConvs
                 ).map((conv, i) => (
                   <motion.div
                     key={conv.conversationId}
@@ -213,11 +218,10 @@ export default function RepDashboard() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05 }}
                     onClick={() => handleSelectConv(conv)}
-                    className={`bg-white/80 backdrop-blur border rounded-2xl p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
-                      selectedConv?.conversationId === conv.conversationId
-                        ? 'border-indigo-300 shadow-md'
-                        : 'border-indigo-100'
-                    }`}
+                    className={`bg-white/80 backdrop-blur border rounded-2xl p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${selectedConv?.conversationId === conv.conversationId
+                      ? 'border-indigo-300 shadow-md'
+                      : 'border-indigo-100'
+                      }`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-semibold text-gray-700 text-sm">
@@ -248,16 +252,16 @@ export default function RepDashboard() {
 
               {(activeTab === 'active' ? activeConvs
                 : activeTab === 'escalated' ? escalatedConvs
-                : historyConvs
+                  : historyConvs
               ).length === 0 && (
-                <div className="py-12 text-center text-gray-300 text-sm">
-                  No conversations here
-                </div>
-              )}
+                  <div className="py-12 text-center text-gray-300 text-sm">
+                    No conversations here
+                  </div>
+                )}
             </div>
           </div>
 
-          {/* Right — Conversation Detail */}
+          {/* Right - Conversation Detail */}
           <div className="lg:col-span-2">
             {convLoading ? (
               <div className="h-96 flex items-center justify-center">
@@ -436,13 +440,12 @@ function ConversationDetail({ conv, onRefresh, onClose }) {
                         {msg.handled_by === 'ai' ? '🤖 AI' : '👤 Representative'}
                       </p>
                       {msg.quality_score > 0 && (
-                        <span className={`text-xs font-medium ${
-                          msg.quality_score >= 70
-                            ? 'text-green-500'
-                            : msg.quality_score >= 40
+                        <span className={`text-xs font-medium ${msg.quality_score >= 70
+                          ? 'text-green-500'
+                          : msg.quality_score >= 40
                             ? 'text-yellow-500'
                             : 'text-red-500'
-                        }`}>
+                          }`}>
                           {msg.quality_score}/100
                         </span>
                       )}
@@ -451,15 +454,15 @@ function ConversationDetail({ conv, onRefresh, onClose }) {
                     {/* Recommendation badge */}
                     {msg.recommendation &&
                       msg.recommendation !== msg.processed_text && (
-                      <div className="mt-2 px-3 py-2 bg-yellow-50 border border-yellow-100 rounded-xl">
-                        <p className="text-xs text-yellow-600 font-medium mb-1">
-                          Original recommendation:
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {msg.recommendation}
-                        </p>
-                      </div>
-                    )}
+                        <div className="mt-2 px-3 py-2 bg-yellow-50 border border-yellow-100 rounded-xl">
+                          <p className="text-xs text-yellow-600 font-medium mb-1">
+                            Original recommendation:
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {msg.recommendation}
+                          </p>
+                        </div>
+                      )}
                   </div>
                 </div>
               )}
@@ -469,7 +472,7 @@ function ConversationDetail({ conv, onRefresh, onClose }) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Response Input — only for open conversations */}
+      {/* Response Input - only for open conversations */}
       {conv.status === 'open' && (
         <div className="p-4 border-t border-indigo-50 space-y-3">
 
@@ -477,13 +480,11 @@ function ConversationDetail({ conv, onRefresh, onClose }) {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setApproved(!approved)}
-              className={`relative w-10 h-5 rounded-full transition-all duration-300 ${
-                approved ? 'bg-indigo-600' : 'bg-gray-200'
-              }`}
+              className={`relative w-10 h-5 rounded-full transition-all duration-300 ${approved ? 'bg-indigo-600' : 'bg-gray-200'
+                }`}
             >
-              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-300 ${
-                approved ? 'left-5' : 'left-0.5'
-              }`} />
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-300 ${approved ? 'left-5' : 'left-0.5'
+                }`} />
             </button>
             <span className="text-xs text-gray-500">
               {approved
