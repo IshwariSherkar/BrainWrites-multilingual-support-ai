@@ -152,12 +152,12 @@ npm run dev
 
 - Multilingual Chat - customers write in any Indian language
 - Tone Standardization - formal, friendly, or empathetic - your choice
-- AI + Human Handoff** - AI handles common queries, escalates complex ones
-- Quality Scoring** - every response gets a quality score
-- Multi-company** - each company gets their own isolated environment
-- Role-based Access** - company, manager, and representative roles
-- Conversation Summaries** - T5-generated summaries when chats close
-- Daily Digests** - scheduled email summaries for managers
+- AI + Human Handoff - AI handles common queries, escalates complex ones
+- Quality Scoring - every response gets a quality score
+- Multi-company - each company gets their own isolated environment
+- Role-based Access - company, manager, and representative roles
+- Conversation Summaries - T5-generated summaries when chats close
+- Daily Digests - scheduled email summaries for managers
 
 
 
